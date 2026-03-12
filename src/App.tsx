@@ -32,7 +32,6 @@ interface FormData {
   email: string;
   setor: string;
   detalhes: string;
-  ajuda: string;
 }
 
 interface FormErrors {
@@ -61,14 +60,13 @@ export default function App() {
     email: '',
     setor: '',
     detalhes: '',
-    ajuda: '',
   });
   const [errors, setErrors] = useState<FormErrors>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
 
-  const totalSteps = 9;
+  const totalSteps = 8;
   const progress = (step / totalSteps) * 100;
 
   // --- Validation ---
@@ -115,11 +113,6 @@ export default function App() {
       case 8:
         if (formData.detalhes.trim().length < 10) {
           newErrors.detalhes = 'Por favor, forneça mais detalhes (mínimo 10 caracteres).';
-        }
-        break;
-      case 9:
-        if (formData.ajuda.trim().length < 5) {
-          newErrors.ajuda = 'Por favor, nos diga como podemos ajudar.';
         }
         break;
     }
@@ -370,7 +363,6 @@ export default function App() {
               {step === 6 && renderInput('email', 'Qual seu e-mail?', 'email', 'Please enter an email', <Mail size={20} />)}
               {step === 7 && renderRadio('setor', 'Sobre qual setor você gostaria de falar?', SETORES, <Building2 size={20} />)}
               {step === 8 && renderTextArea('detalhes', 'Pode nos contar com o máximo de detalhes o que aconteceu?', 'Enter your answer', <MessageSquare size={20} />)}
-              {step === 9 && renderTextArea('ajuda', 'Como podemos te ajudar a resolver essa situação?', 'Enter your answer', <HelpCircle size={20} />)}
             </motion.div>
           </AnimatePresence>
 
