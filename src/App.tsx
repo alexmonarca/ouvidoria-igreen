@@ -325,7 +325,7 @@ export default function App() {
       {/* Header */}
       <div className="max-w-2xl w-full mb-8 flex flex-col items-center sm:items-start">
         <img 
-          src="https://i0.wp.com/patrick.pro.br/wp-content/uploads/2024/01/Logo-colorida-.png?fit=1217%2C372&ssl=1" 
+          src="https://static.wixstatic.com/media/b256d1_8ae6bed7ce7e496782b9d6412d635e89~mv2.png/v1/fill/w_980,h_299,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/logo%20marca%20png%20verde.png" 
           alt="iGreen Energy Logo" 
           className="h-16 w-auto mb-4 object-contain"
           referrerPolicy="no-referrer"
