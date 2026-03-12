@@ -40,7 +40,7 @@ interface FormErrors {
 }
 
 // --- Constants ---
-const WEBHOOK_URL = 'https://igreen-n8n.rdgveg.easypanel.host/webhook/ouvidoria';
+const PROXY_URL = '/api/proxy-webhook';
 
 const SETORES = [
   'Suporte ao cliente',
@@ -68,6 +68,7 @@ export default function App() {
   const [errors, setErrors] = useState<FormErrors>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
 
   const totalSteps = 9;
   const progress = (step / totalSteps) * 100;
@@ -148,29 +149,48 @@ export default function App() {
 
   const handleSubmit = async () => {
     setIsSubmitting(true);
+    setSubmitError(null);
+    
+    console.log('Iniciando submissão via proxy:', PROXY_URL);
+    console.log('Payload:', formData);
+
     try {
-      const response = await fetch(WEBHOOK_URL, {
+      const response = await fetch(PROXY_URL, {
         method: 'POST',
         headers: {
+          'Accept': 'application/json',
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
           ...formData,
           submittedAt: new Date().toISOString(),
+          source: window.location.href
         }),
       });
 
       if (response.ok) {
+        console.log('Webhook disparado com sucesso via proxy!');
         setIsSuccess(true);
       } else {
-        // Even if webhook fails, we show success for the demo or handle error
-        // But the user asked for a clear submission.
-        setIsSuccess(true); 
+        const errorText = await response.text();
+        console.error('Erro na resposta do proxy:', response.status, errorText);
+        
+        if (response.status === 404) {
+          let hint = "";
+          try {
+            const json = JSON.parse(errorText);
+            hint = json.message || json.hint || "";
+          } catch (e) {
+            hint = errorText;
+          }
+          setSubmitError(`Erro 404 no n8n: ${hint || "Webhook não encontrado. Verifique se o caminho 'ouvidoria' está correto no nó do n8n."}`);
+        } else {
+          setSubmitError(`Erro no servidor (${response.status}). Verifique o n8n.`);
+        }
       }
     } catch (error) {
-      console.error('Error submitting form:', error);
-      // Fallback success for demo purposes if webhook is not reachable during development
-      setIsSuccess(true);
+      console.error('Erro de rede ao chamar proxy:', error);
+      setSubmitError('Erro de conexão com o servidor local. Tente novamente em instantes.');
     } finally {
       setIsSubmitting(false);
     }
@@ -202,6 +222,9 @@ export default function App() {
         autoFocus
         onKeyDown={(e) => e.key === 'Enter' && nextStep()}
       />
+      <p className="text-slate-400 text-xs flex items-center gap-1 ml-1">
+        Pressione <span className="font-bold bg-slate-100 px-1.5 py-0.5 rounded border border-slate-200">Enter ↵</span> para avançar
+      </p>
       {errors[id] && (
         <motion.p 
           initial={{ opacity: 0, y: -10 }}
@@ -372,21 +395,33 @@ export default function App() {
           </AnimatePresence>
 
           {/* Navigation */}
-          <div className="mt-12 flex items-center justify-between gap-4">
-            <button
-              onClick={prevStep}
-              disabled={step === 1 || isSubmitting}
-              className={`flex items-center gap-2 px-6 py-3 rounded-xl font-bold transition-all
-                ${step === 1 || isSubmitting ? 'opacity-0 pointer-events-none' : 'text-slate-400 hover:text-slate-600 hover:bg-slate-50'}
-              `}
-            >
-              <ChevronLeft size={20} /> Anterior
-            </button>
+          <div className="mt-12 flex flex-col sm:flex-row items-center justify-center sm:justify-between gap-6 sm:gap-4">
+            <div className="flex flex-col items-center sm:items-start w-full sm:w-auto order-2 sm:order-1">
+              <button
+                onClick={prevStep}
+                disabled={step === 1 || isSubmitting}
+                className={`flex items-center gap-2 px-6 py-3 rounded-xl font-bold transition-all
+                  ${step === 1 || isSubmitting ? 'opacity-0 pointer-events-none' : 'text-slate-400 hover:text-slate-600 hover:bg-slate-50'}
+                `}
+              >
+                <ChevronLeft size={20} /> Anterior
+              </button>
+              
+              {submitError && (
+                <motion.p 
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  className="text-red-500 text-xs mt-2 font-medium max-w-[200px] text-center sm:text-left"
+                >
+                  {submitError}
+                </motion.p>
+              )}
+            </div>
 
             <button
               onClick={nextStep}
               disabled={isSubmitting}
-              className="flex items-center gap-2 px-8 py-4 bg-emerald-600 text-white rounded-2xl font-bold text-lg hover:bg-emerald-700 transition-all shadow-lg shadow-emerald-200 disabled:opacity-50"
+              className="flex items-center justify-center gap-2 w-full sm:w-auto px-10 py-5 bg-emerald-600 text-white rounded-2xl font-bold text-lg hover:bg-emerald-700 transition-all shadow-lg shadow-emerald-200 disabled:opacity-50 order-1 sm:order-2"
             >
               {isSubmitting ? (
                 <div className="w-6 h-6 border-3 border-white/30 border-t-white rounded-full animate-spin" />
