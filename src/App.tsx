@@ -40,8 +40,6 @@ interface FormErrors {
 }
 
 // --- Constants ---
-const PROXY_URL = '/api/proxy-webhook';
-
 const SETORES = [
   'Suporte ao cliente',
   'Suporte ao licenciado',
@@ -150,15 +148,11 @@ export default function App() {
   const handleSubmit = async () => {
     setIsSubmitting(true);
     setSubmitError(null);
-    
-    console.log('Iniciando submissão via proxy:', PROXY_URL);
-    console.log('Payload:', formData);
 
     try {
-      const response = await fetch(PROXY_URL, {
+      const response = await fetch('/api/proxy-webhook', {
         method: 'POST',
         headers: {
-          'Accept': 'application/json',
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
@@ -168,29 +162,15 @@ export default function App() {
         }),
       });
 
+      const responseData = await response.text();
+      
       if (response.ok) {
-        console.log('Webhook disparado com sucesso via proxy!');
         setIsSuccess(true);
       } else {
-        const errorText = await response.text();
-        console.error('Erro na resposta do proxy:', response.status, errorText);
-        
-        if (response.status === 404) {
-          let hint = "";
-          try {
-            const json = JSON.parse(errorText);
-            hint = json.message || json.hint || "";
-          } catch (e) {
-            hint = errorText;
-          }
-          setSubmitError(`Erro 404 no n8n: ${hint || "Webhook não encontrado. Verifique se o caminho 'ouvidoria' está correto no nó do n8n."}`);
-        } else {
-          setSubmitError(`Erro no servidor (${response.status}). Verifique o n8n.`);
-        }
+        setSubmitError(`Resposta do n8n (${response.status}): ${responseData}`);
       }
     } catch (error) {
-      console.error('Erro de rede ao chamar proxy:', error);
-      setSubmitError('Erro de conexão com o servidor local. Tente novamente em instantes.');
+      setSubmitError("Erro de conexão com o servidor local.");
     } finally {
       setIsSubmitting(false);
     }

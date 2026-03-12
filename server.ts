@@ -1,10 +1,7 @@
 import express from "express";
-import { createServer as createViteServer } from "vite";
 import path from "path";
-import { fileURLToPath } from "url";
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+import { createServer as createViteServer } from "vite";
+import axios from "axios";
 
 async function startServer() {
   const app = express();
@@ -12,39 +9,30 @@ async function startServer() {
 
   app.use(express.json());
 
-  // Proxy endpoint to avoid CORS issues
+  // Proxy limpo e resetado
   app.post("/api/proxy-webhook", async (req, res) => {
-    const WEBHOOK_URL = process.env.WEBHOOK_URL || 'https://igreen-n8n.rdgveg.easypanel.host/webhook/ouvidoria';
+    const WEBHOOK_URL = 'https://integrations.igreenenergy.io/webhook/ouvidoria';
     
-    console.log(`[Proxy] Recebida requisição para o webhook: ${WEBHOOK_URL}`);
+    console.log(`[RESET] Tentando enviar para: ${WEBHOOK_URL}`);
     
     try {
-      console.log(`[Proxy] Enviando POST para: ${WEBHOOK_URL}`);
-      const response = await fetch(WEBHOOK_URL, {
-        method: 'POST',
+      const response = await axios.post(WEBHOOK_URL, req.body, {
         headers: {
-          'Accept': 'application/json',
           'Content-Type': 'application/json',
+          'Accept': 'application/json'
         },
-        body: JSON.stringify(req.body),
-        redirect: 'follow' // Garantir que seguimos redirecionamentos se houver
+        timeout: 10000,
+        validateStatus: () => true // Captura qualquer status (404, 500, etc) sem dar crash
       });
 
-      const data = await response.text();
-      console.log(`[Proxy] Resposta final do n8n: Status ${response.status}`);
-      console.log(`[Proxy] URL final da resposta: ${response.url}`);
-      
-      res.status(response.status).send(data);
-    } catch (error) {
-      console.error('[Proxy] Erro ao conectar no n8n:', error);
-      res.status(502).json({ 
-        error: 'Não foi possível alcançar o servidor n8n.',
-        details: error instanceof Error ? error.message : String(error)
-      });
+      console.log(`[RESET] n8n respondeu com Status: ${response.status}`);
+      res.status(response.status).send(response.data);
+    } catch (error: any) {
+      console.error('[RESET] Erro na conexão:', error.message);
+      res.status(500).json({ error: 'Falha na conexão com o n8n', details: error.message });
     }
   });
 
-  // Vite middleware for development
   if (process.env.NODE_ENV !== "production") {
     const vite = await createViteServer({
       server: { middlewareMode: true },
@@ -54,13 +42,11 @@ async function startServer() {
   } else {
     const distPath = path.join(process.cwd(), 'dist');
     app.use(express.static(distPath));
-    app.get('*', (req, res) => {
-      res.sendFile(path.join(distPath, 'index.html'));
-    });
+    app.get('*', (req, res) => res.sendFile(path.join(distPath, 'index.html')));
   }
 
   app.listen(PORT, "0.0.0.0", () => {
-    console.log(`Server running on http://localhost:${PORT}`);
+    console.log(`Servidor resetado em http://localhost:${PORT}`);
   });
 }
 
