@@ -367,8 +367,22 @@ export default function App() {
           </AnimatePresence>
 
           {/* Navigation */}
-          <div className="mt-12 flex flex-col sm:flex-row items-center justify-center sm:justify-between gap-6 sm:gap-4">
-            <div className="flex flex-col items-center sm:items-start w-full sm:w-auto order-2 sm:order-1">
+          <div className="mt-12 flex flex-col sm:flex-row items-center justify-start gap-6 sm:gap-8">
+            <button
+              onClick={nextStep}
+              disabled={isSubmitting}
+              className="flex items-center justify-center gap-2 w-full sm:w-auto px-12 py-5 bg-emerald-600 text-white rounded-2xl font-bold text-lg hover:bg-emerald-700 transition-all shadow-lg shadow-emerald-200 disabled:opacity-50 order-1"
+            >
+              {isSubmitting ? (
+                <div className="w-6 h-6 border-3 border-white/30 border-t-white rounded-full animate-spin" />
+              ) : step === totalSteps ? (
+                <>Enviar <Send size={20} /></>
+              ) : (
+                <>Próximo <ChevronRight size={20} /></>
+              )}
+            </button>
+
+            <div className="flex flex-col items-center sm:items-start w-full sm:w-auto order-2">
               <button
                 onClick={prevStep}
                 disabled={step === 1 || isSubmitting}
@@ -389,20 +403,6 @@ export default function App() {
                 </motion.p>
               )}
             </div>
-
-            <button
-              onClick={nextStep}
-              disabled={isSubmitting}
-              className="flex items-center justify-center gap-2 w-full sm:w-auto px-10 py-5 bg-emerald-600 text-white rounded-2xl font-bold text-lg hover:bg-emerald-700 transition-all shadow-lg shadow-emerald-200 disabled:opacity-50 order-1 sm:order-2"
-            >
-              {isSubmitting ? (
-                <div className="w-6 h-6 border-3 border-white/30 border-t-white rounded-full animate-spin" />
-              ) : step === totalSteps ? (
-                <>Enviar <Send size={20} /></>
-              ) : (
-                <>Próximo <ChevronRight size={20} /></>
-              )}
-            </button>
           </div>
         </div>
       </div>
